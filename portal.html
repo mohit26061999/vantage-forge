@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071426">
+<meta name="description" content="Vantage Forge customer and project portal. Submit requirements, track projects, communicate with the team, and securely receive deliverables.">
+<title>Vantage Forge Portal</title>
+<link rel="icon" href="assets/vantage-forge-logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html" title="Back to Vantage Forge website"><img src="assets/vantage-forge-logo.png" alt="Vantage Forge"><span><b>VANTAGE FORGE</b><small>BUILD TODAY, LEAD TOMORROW</small></span></a>
+  <div class="top-actions"><span id="connectionState" class="connection">Checking setup…</span><button id="logoutBtn" class="btn ghost hidden">Sign out</button></div>
+</header>
+<main class="shell">
+  <section id="setupNotice" class="notice hidden">
+    <h2>One-time setup required</h2>
+    <p>This portal is ready to connect, but needs your Supabase project settings. Follow <a href="README.md">the setup guide</a>, then enter your public project URL and anon key in <code>config.js</code>.</p>
+  </section>
+
+  <section id="authView" class="auth-layout">
+    <div class="hero-copy">
+      <span class="eyebrow">YOUR PROJECT WORKSPACE</span>
+      <h1>Good ideas deserve<br><span>a place to grow.</span></h1>
+      <p>Submit project requirements, work with the Vantage Forge team, follow progress, and receive your deliverables in one secure place.</p>
+      <div class="feature-points"><span>✓ Private project workspace</span><span>✓ Team communication</span><span>✓ Secure deliverable downloads</span></div>
+    </div>
+    <div class="auth-card">
+      <div class="tabs"><button class="tab active" data-auth-tab="login">Sign in</button><button class="tab" data-auth-tab="signup">Create account</button></div>
+      <form id="loginForm" class="auth-form">
+        <h2>Welcome back</h2><p class="muted">Sign in to access your projects.</p>
+        <label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters"></label>
+        <button class="btn primary full" type="submit">Sign in <span>↗</span></button>
+        <button class="text-button" type="button" id="resetPasswordBtn">Forgot password?</button>
+      </form>
+      <form id="signupForm" class="auth-form hidden">
+        <h2>Create your account</h2><p class="muted">Your private space for enquiries and project delivery.</p>
+        <label>Full name<input name="full_name" autocomplete="name" required maxlength="100" placeholder="Your name"></label>
+        <label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters"></label>
+        <button class="btn primary full" type="submit">Create account <span>↗</span></button>
+        <p class="tiny muted">You may need to confirm your email before signing in, depending on your Supabase settings.</p>
+      </form>
+      <p id="authMessage" class="message" role="status"></p>
+    </div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <div class="welcome-row"><div><span class="eyebrow" id="roleLabel">YOUR WORKSPACE</span><h1 id="welcomeTitle">Your dashboard</h1><p class="muted" id="welcomeSub">Manage your enquiries and projects.</p></div><button id="newRequestBtn" class="btn primary">＋ New requirement</button></div>
+    <div class="stats-grid">
+      <article class="stat-card"><span>Open enquiries</span><strong id="statEnquiries">0</strong></article>
+      <article class="stat-card"><span>Active projects</span><strong id="statProjects">0</strong></article>
+      <article class="stat-card"><span>Unread updates</span><strong id="statMessages">0</strong></article>
+    </div>
+    <div id="adminTools" class="admin-tools hidden">
+      <div><span class="eyebrow">TEAM WORKSPACE</span><h2>Response team queue</h2><p class="muted">Review new requirements, assign team members, update status, and publish deliverables.</p></div>
+      <div class="admin-actions"><button id="refreshBtn" class="btn ghost">Refresh</button><button id="teamGuideBtn" class="btn ghost">Team setup</button></div>
+    </div>
+    <div class="content-grid">
+      <section class="panel main-panel"><div class="panel-head"><div><h2 id="listTitle">Your requests</h2><p class="muted" id="listSub">Your latest enquiries and projects.</p></div><select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="submitted">Submitted</option><option value="reviewing">Reviewing</option><option value="awaiting_customer">Awaiting you</option><option value="quoted">Quotation sent</option><option value="approved">Approved</option><option value="in_progress">In progress</option><option value="delivered">Delivered</option><option value="closed">Closed</option></select></div><div id="requestList" class="request-list"><div class="empty">Loading your workspace…</div></div></section>
+      <aside class="panel side-panel"><h2>Need help?</h2><p class="muted">Send a new requirement with the details our team needs to understand your project.</p><ul class="help-list"><li>Describe the outcome you need</li><li>Include preferred technologies</li><li>Share deadlines and budget range</li><li>Attach a brief or reference file</li></ul><button id="sideNewRequestBtn" class="btn primary full">Submit requirement</button><div class="privacy-note"><span>🔒</span><div><b>Your files stay private</b><p>Project files are available only to authorized users.</p></div></div></aside>
+    </div>
+  </section>
+</main>
+
+<dialog id="requirementDialog" class="modal">
+  <form id="requirementForm" class="modal-card">
+    <div class="modal-head"><div><span class="eyebrow">NEW ENQUIRY</span><h2>Tell us about your requirement</h2></div><button type="button" class="icon-btn" data-close="requirementDialog" aria-label="Close">×</button></div>
+    <p class="muted">Your request is private. The Vantage Forge team will review it and respond through the portal and, when configured, email.</p>
+    <div class="form-grid">
+      <label>Requirement title *<input name="title" required maxlength="160" placeholder="e.g. AI-powered document Q&A"></label>
+      <label>Category *<select name="category" required><option value="">Choose category</option><option>AI / Machine Learning</option><option>Data Analytics / Data Science</option><option>Web Development</option><option>Mobile Application</option><option>Research / Academic Project</option><option>Business IT Solution</option><option>Training / Mentorship</option><option>Other</option></select></label>
+      <label>Preferred technology<input name="technology" maxlength="250" placeholder="Python, React, Power BI…"></label>
+      <label>Target date<input name="target_date" type="date"></label>
+      <label>Budget range (optional)<select name="budget_range"><option value="">Prefer to discuss</option><option>Under ₹5,000</option><option>₹5,000–₹15,000</option><option>₹15,000–₹30,000</option><option>₹30,000–₹60,000</option><option>₹60,000+</option><option>Not applicable</option></select></label>
+      <label>Reference file (optional)<input name="attachment" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.csv,.xlsx,.png,.jpg,.jpeg,.zip"></label>
+      <label class="span-two">Describe your requirement *<textarea name="description" required minlength="20" maxlength="10000" rows="5" placeholder="What are you trying to build? Include features, expected output, constraints, or academic requirements."></textarea></label>
+    </div>
+    <p class="tiny muted">Allowed attachments: PDF, Office documents, text, CSV, images, or ZIP. Maximum 10 MB.</p>
+    <p id="requirementMessage" class="message" role="status"></p>
+    <div class="modal-actions"><button type="button" class="btn ghost" data-close="requirementDialog">Cancel</button><button class="btn primary" type="submit">Submit requirement <span>↗</span></button></div>
+  </form>
+</dialog>
+
+<dialog id="detailDialog" class="modal wide-modal">
+  <div class="modal-card"><div class="modal-head"><div><span class="eyebrow">REQUEST WORKSPACE</span><h2 id="detailTitle">Request details</h2></div><button type="button" class="icon-btn" data-close="detailDialog" aria-label="Close">×</button></div><div id="detailBody"></div></div>
+</dialog>
+
+<dialog id="teamDialog" class="modal">
+  <div class="modal-card"><div class="modal-head"><div><span class="eyebrow">ADMINISTRATION</span><h2>Team setup</h2></div><button type="button" class="icon-btn" data-close="teamDialog" aria-label="Close">×</button></div>
+  <p>For security, team roles are not assigned from the public interface. Create each team member's account, then use the SQL instructions in <code>supabase/schema.sql</code> to grant an approved role. Never grant admin access to a customer account.</p>
+  <p class="muted">Admin users can assign a request to an existing team member from a request's detail view. The database enforces staff permissions.</p><button class="btn primary" data-close="teamDialog">Understood</button></div>
+</dialog>
+<div id="toast" class="toast" role="status"></div>
+<footer class="footer"><span>© <span id="year"></span> Vantage Forge</span><span>Build today, lead tomorrow.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script><script src="app.js"></script>
+</body></html>

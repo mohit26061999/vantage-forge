@@ -1,103 +1,48 @@
-# Vantage Forge Portal V1
+# Vantage Forge website + client portal
 
-A deployable customer + team project portal using:
-- **Netlify**: static frontend hosting
-- **Supabase Auth**: customer and team login
-- **Supabase Postgres + RLS**: database and authorization
-- **Supabase private Storage**: project references and deliverables
-- **Supabase Edge Function + Resend (optional)**: email notifications
-- **GitHub**: source control
+This package contains a public multi-page company website, a Supabase-powered editable catalog, and the existing customer/project portal.
 
-The supplied Vantage Forge logo is included in `assets/`.
+## Pages
+- `index.html` — homepage with trending courses, featured services and projects
+- `projects.html` — services and project showcase
+- `courses.html` — trending and published courses
+- `about.html` — company overview
+- `contact.html` — enquiry form that opens WhatsApp
+- `admin.html` — admin-only management for courses, services and projects
+- `portal.html` — existing customer/project portal (preserved from the previous package)
 
-## What V1 includes
+## 1. Configure Supabase browser settings
+Open `config.js`. The project URL is prefilled for your existing Supabase project. Replace `SUPABASE_ANON_KEY` with your project's public **publishable key** (`sb_publishable_...`) or legacy anon key. Never use a service-role or `sb_secret_...` key in browser code.
 
-- Customer signup, sign-in, password reset
-- Personal dashboard with request list and statuses
-- Requirement submission with optional file attachment (10 MB limit)
-- Staff/admin dashboard for reviewing all requests
-- Status changes, staff assignment, quotation notes and amount
-- Customer quotation approval
-- Customer/team messaging and staff-only internal notes
-- Private file uploads and time-limited signed download URLs
-- Optional email notifications for new requests, messages, quotations and deliverables
+## 2. Create the catalog table
+In Supabase Dashboard → SQL Editor, run the existing `supabase/schema.sql` only if you have not already run the portal schema. Since your current project already has `profiles`, `requests`, `messages` and `files`, do not rerun the entire original schema unnecessarily.
 
-## Free-tier notes
+Then run all of `supabase/catalog.sql`. This creates the catalog table, row-level security policies and starter examples for a course, service and project. The starter records are editable from the admin page.
 
-You can develop and deploy on free tiers. Providers' limits and policies may change. Free hosting and database plans are not a guarantee of unlimited or permanent uptime. Email delivery requires a Resend account and a verified sender/domain for reliable production use; if email isn't configured, portal functionality still works and the notify function reports `not_configured`.
-
-## Deployment overview
-
-### 1. Create Supabase project
-1. Go to https://supabase.com/ and create a project.
-2. Open **SQL Editor** and run the full contents of `supabase/schema.sql`.
-3. In **Project Settings → API**, copy the Project URL and the public anon/publishable key.
-4. Edit `config.js`:
-   - `SUPABASE_URL`: your project URL
-   - `SUPABASE_ANON_KEY`: your public anon/publishable key
-   These are browser-visible values. **Never use the service_role key in `config.js`.**
-
-### 2. Create your first admin safely
-1. Sign up using the deployed portal or Supabase Auth dashboard.
-2. Confirm the account if email confirmation is enabled.
-3. In Supabase SQL Editor, run this query with your exact account email:
+## 3. Give your account admin permission
+First create an account through the existing portal/signup flow, and confirm the email if confirmation is enabled. Then run this SQL in Supabase SQL Editor, replacing the email with the email used for your owner account:
 
 ```sql
 update public.profiles
 set role = 'admin'
-where email = 'YOUR-ADMIN-EMAIL@example.com';
+where email = 'YOUR_OWNER_EMAIL@example.com';
 ```
 
-Verify exactly one row was updated. Do not expose admin role assignment in the public UI. For each staff member, have them create their own account first, then run:
+Verify that exactly one row was updated. Do not grant admin role to ordinary customers. Admin roles are assigned only by a trusted project owner through SQL.
 
-```sql
-update public.profiles
-set role = 'staff'
-where email = 'TEAM-MEMBER@example.com';
-```
+## 4. Configure WhatsApp
+Open `site-config.js` and set `WHATSAPP_NUMBER` to your WhatsApp number with country code and digits only. Example format: `919876543210` (replace with your real number). Set `CONTACT_EMAIL` if desired. Until the real number is set, WhatsApp links cannot directly reach your business.
 
-Use individual accounts. Never share a single admin login. Revoke access promptly when a team member leaves.
+## 5. Deploy
+Upload all files and folders to the root of your existing GitHub repository, keeping the file/folder structure. Commit/push, then let Netlify redeploy. The public pages read published catalog records from Supabase. An admin can add, edit, publish/unpublish, mark trending/featured, reorder, or delete catalog items at `/admin.html`.
 
-### 3. Deploy frontend to Netlify
-1. Extract this ZIP.
-2. Create a GitHub repository, e.g. `vantage-forge-portal`.
-3. Upload the **contents** of this folder into the repository root. Confirm `index.html`, `config.js`, `app.js`, and `style.css` are at the root, not one folder deeper.
-4. In Netlify, select **Add new project → Import an existing project → GitHub** and choose the repository.
-5. Build command: leave blank. Publish directory: `.`.
-6. Deploy. In Supabase Auth settings, add the Netlify site URL to **Site URL** and **Redirect URLs**. If using a custom domain later, add it there too.
-7. Replace `YOUR-...` placeholders in `config.js`, commit, and redeploy.
+## Admin behavior
+- Sign in to `admin.html` with your existing Supabase account.
+- Only accounts with `profiles.role = 'admin'` can manage the catalog.
+- Public visitors can read published items only. Admin writes are protected by Supabase Row Level Security.
+- “Trending” is manually controlled by the admin, not an automatic external trend feed.
 
-### 4. Enable email notifications (optional but recommended)
-Email is not sent by the static website itself. Deploy the Edge Function from a trusted local terminal with the Supabase CLI:
-1. Install the Supabase CLI and log in: https://supabase.com/docs/guides/cli
-2. Link the project, then set secrets:
-
-```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase secrets set RESEND_API_KEY=re_xxxxxxxxx NOTIFY_FROM="Vantage Forge <notifications@your-verified-domain.com>" SITE_URL="https://YOUR-SITE.netlify.app"
-supabase functions deploy notify
-```
-
-3. Configure a verified sender in Resend: https://resend.com/
-4. For the function's CORS allow-list, `SITE_URL` must be your deployed website origin. If you use a custom domain, update it and redeploy/reconfigure.
-5. Verify email deliverability with a test customer and staff account. Do not use an unverified sender or pretend emails are configured until a real test succeeds.
-
-The Edge Function checks the caller's JWT and reads the service role key only from server-side Supabase environment secrets. Never paste secrets into frontend files, GitHub, or a chat.
-
-### 5. Important launch checks
-- Test customer signup, email confirmation, sign-in, password reset.
-- Test two customers and confirm they cannot see each other's requests, messages, or files.
-- Test staff and admin accounts with separate logins.
-- Test quotation flow, internal notes, upload, and signed download links.
-- Verify customer cannot change another user's request, assign staff, set admin roles, or read internal notes.
-- Check Supabase Auth rate limits, SMTP/email confirmation settings, backup options, and current free-plan limits.
-- Add a privacy policy, terms, company contact details, and retention policy before collecting real customer data.
-- Do not collect payment card details directly; use a reputable payment provider if adding payments later.
-
-## Current limitations / V1 scope
-- This is a starter deployable V1, not a fully audited commercial platform.
-- No built-in payment gateway, invoice generator, realtime chat, audit log, or file virus scanning yet.
-- Notification emails are optional and require Edge Function deployment and Resend configuration.
-- File validation in the browser is for user experience; production systems should add server-side file scanning and stricter MIME/content checks.
-- Staff/customer role and row-level access are enforced by the provided Supabase RLS policies; review the policies with a security professional before storing sensitive or high-value client materials.
+## Notes
+- This is a static HTML/CSS/JavaScript website. It does not require a separate server.
+- The contact form opens WhatsApp with a prefilled message; the visitor still presses Send in WhatsApp. It does not silently send messages.
+- Test the catalog after running SQL. If the page says the catalog cannot load, check the Supabase table/policies and browser console.
