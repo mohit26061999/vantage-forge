@@ -103,3 +103,10 @@ The customer dashboard header now uses the same centered max-width container and
 The admin catalog editor now accepts an image file (JPG, PNG, WEBP, GIF; max 5 MB) instead of requiring an image URL. Images upload to the Supabase Storage `catalog-images` bucket; the resulting public URL is saved in `catalog_items.image_url`, and public catalog cards display the uploaded image.
 
 **One-time storage setup:** Run the updated `supabase/catalog.sql` in Supabase SQL Editor. It creates/configures the public-read `catalog-images` bucket and policies allowing only admins to upload, update, and delete images. This uses the existing `public.is_admin()` function. Do not use a service-role key in the browser.
+
+
+## Account creation troubleshooting
+
+The sign-in and account-creation handlers now always restore the submit button with `finally`, show a clear status message, and stop showing “Please wait…” after 20 seconds if Supabase does not respond. A timeout does not prove the account was not created; check Supabase Authentication → Users before retrying to avoid duplicate attempts.
+
+If signup times out, check Supabase Authentication → Logs and Authentication → SMTP Settings. If email confirmation is enabled, use a verified SMTP sender/domain and confirm the redirect URL includes the deployed `/portal.html` path. Do not disable email confirmation just to mask SMTP errors, and never put a service-role key in frontend files.

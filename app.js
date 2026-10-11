@@ -18,6 +18,7 @@
   const showToast = (msg, bad=false) => { const el=$("#toast"); el.textContent=msg; el.style.background=bad?"#9f2828":"#10233b"; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),3500); };
   const setMessage = (selector,msg,bad=false) => { const el=$(selector); el.textContent=msg; el.classList.toggle("error",bad); };
   const setBusy = (form,busy) => { const b=$('button[type="submit"]',form); if(b){b.disabled=busy;b.dataset.original ||= b.textContent;b.textContent=busy?"Please wait…":b.dataset.original;} };
+  const withTimeout = (promise, ms=20000) => Promise.race([promise, new Promise((_, reject)=>setTimeout(()=>reject(new Error("The request is taking too long. Check your internet connection and Supabase Authentication settings, then try again.")),ms))]);
   const invokeNotify = async (payload) => {
     try { if(supabase) await supabase.functions.invoke("notify",{body:payload}); } catch(e) { console.warn("Optional notification failed",e); }
   };
@@ -152,14 +153,39 @@
     if(!currentUser){currentProfile=null;showSignedOut();return;}
     try{await loadProfile();await refreshDashboard();}catch(e){console.error(e);showToast("Your profile is not ready. Confirm email and check the database setup.",true);showSignedOut();}
   }
+  function friendlyAuthError(err) {
+    const message=String(err?.message||err||"Unknown error");
+    if(/timed out|taking too long/i.test(message)) return message+" If this continues, open Supabase → Authentication → Logs to inspect the failed signup request.";
+    if(/rate limit|email rate limit/i.test(message)) return "Supabase email rate limit reached. Wait before retrying, or configure a verified custom SMTP provider in Supabase Authentication → SMTP Settings.";
+    if(/already registered|already been registered|user already exists/i.test(message)) return "An account may already exist for this email. Try Sign in or Forgot password.";
+    if(/password/i.test(message) && /length|short|weak/i.test(message)) return "Choose a stronger password that meets the password requirements.";
+    return message;
+  }
+
   async function init() {
     $("#year").textContent=new Date().getFullYear();
     if(!configured || !window.supabase){$("#connectionState").textContent="Setup needed";$("#setupNotice").classList.remove("hidden");$("#authMessage").textContent="Connect Supabase to activate sign-in and project features.";return;}
     supabase=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     $("#connectionState").textContent="Secure workspace";
     $$("[data-auth-tab]").forEach(b=>b.addEventListener("click",()=>setAuthTab(b.dataset.authTab)));
-    $("#loginForm").addEventListener("submit",async e=>{e.preventDefault();setBusy(e.currentTarget,true);setMessage("#authMessage","");const fd=new FormData(e.currentTarget);const {error}=await supabase.auth.signInWithPassword({email:fd.get("email"),password:fd.get("password")});setBusy(e.currentTarget,false);if(error){setMessage("#authMessage",error.message,true);return;}});
-    $("#signupForm").addEventListener("submit",async e=>{e.preventDefault();setBusy(e.currentTarget,true);setMessage("#authMessage","");const fd=new FormData(e.currentTarget);const {data,error}=await supabase.auth.signUp({email:fd.get("email"),password:fd.get("password"),options:{data:{full_name:String(fd.get("full_name")).trim()}}});setBusy(e.currentTarget,false);if(error){setMessage("#authMessage",error.message,true);return;}if(data.session){setMessage("#authMessage","Account created. Loading your workspace…");}else{setMessage("#authMessage","Account created. Check your email to confirm your account before signing in.");}});
+    $("#loginForm").addEventListener("submit",async e=>{
+      e.preventDefault(); const form=e.currentTarget; setBusy(form,true); setMessage("#authMessage","");
+      try { const fd=new FormData(form); const result=await withTimeout(supabase.auth.signInWithPassword({email:String(fd.get("email")).trim(),password:fd.get("password")}));
+        if(result.error) throw result.error;
+      } catch(err) { setMessage("#authMessage",friendlyAuthError(err),true); }
+      finally { setBusy(form,false); }
+    });
+    $("#signupForm").addEventListener("submit",async e=>{
+      e.preventDefault(); const form=e.currentTarget; setBusy(form,true); setMessage("#authMessage","Creating your account…");
+      try {
+        const fd=new FormData(form); const email=String(fd.get("email")||"").trim();
+        const result=await withTimeout(supabase.auth.signUp({email,password:fd.get("password"),options:{data:{full_name:String(fd.get("full_name")||"").trim()},emailRedirectTo:location.origin+"/portal.html"}}));
+        if(result.error) throw result.error;
+        if(result.data?.session) setMessage("#authMessage","Account created successfully. Opening your workspace…");
+        else setMessage("#authMessage","Account request completed. Check your inbox (and spam folder) for the confirmation email before signing in. If no email arrives, contact the site administrator to check Supabase SMTP settings.");
+      } catch(err) { setMessage("#authMessage",friendlyAuthError(err),true); }
+      finally { setBusy(form,false); }
+    });
     $("#resetPasswordBtn").addEventListener("click",async()=>{const email=$("#loginForm [name=email]").value.trim();if(!email){setMessage("#authMessage","Enter your email address first.",true);return;}const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin});setMessage("#authMessage",error?error.message:"If this email is registered, a password reset link will be sent.");});
     $("#logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();});
     $("#newRequestBtn").addEventListener("click",()=>$("#requirementDialog").showModal());$("#sideNewRequestBtn").addEventListener("click",()=>$("#requirementDialog").showModal());
