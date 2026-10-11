@@ -2,7 +2,10 @@
  * The browser uses only the Supabase anon key. Authorization is enforced by Postgres RLS.
  */
 (() => {
-  const $ = (s, root = document) => root.querySelector(s);
+  
+  const $ = (s, root = document) =>
+  (root || document).querySelector(s);
+
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
   const cfg = window.VF_CONFIG || {};
   const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT") &&
@@ -14,7 +17,22 @@
   const fmtDate = v => v ? new Date(v).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "Not set";
   const showToast = (msg, bad=false) => { const el=$("#toast"); el.textContent=msg; el.style.background=bad?"#9f2828":"#10233b"; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),3500); };
   const setMessage = (selector,msg,bad=false) => { const el=$(selector); el.textContent=msg; el.classList.toggle("error",bad); };
-  const setBusy = (form,busy) => { const b=$('button[type="submit"]',form); if(b){b.disabled=busy;b.dataset.original ||= b.textContent;b.textContent=busy?"Please wait…":b.dataset.original;} };
+  
+const setBusy = (form, busy) => {
+  if (!form) {
+    console.error("setBusy received a missing form element");
+    return;
+  }
+
+  const b = form.querySelector('button[type="submit"]');
+
+  if (b) {
+    b.disabled = busy;
+    b.dataset.original ||= b.textContent;
+    b.textContent = busy ? "Please wait…" : b.dataset.original;
+  }
+};
+
   const invokeNotify = async (payload) => {
     try { if(supabase) await supabase.functions.invoke("notify",{body:payload}); } catch(e) { console.warn("Optional notification failed",e); }
   };
