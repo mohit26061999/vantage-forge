@@ -37,6 +37,41 @@
       if(filterHost && !filterHost.dataset.ready){filterHost.dataset.ready='1';const categories=['All',...new Set(items.map(x=>x.category).filter(Boolean))];filterHost.innerHTML=categories.map((c,i)=>`<button type="button" class="${i===0?'active':''}" data-filter="${esc(c)}">${esc(c)}</button>`).join('');filterHost.addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;filterHost.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));const c=b.dataset.filter;const shown=c==='All'?items:items.filter(x=>x.category===c);el.innerHTML=shown.length?shown.map(itemCard).join(''):'<div class="empty-state">No items in this category yet.</div>';});}
     }
   }
+  // Keep navigation consistent across public pages and the authenticated workspace.
+  // The browser key is the public anon/publishable key; authorization remains enforced by Supabase RLS.
+  async function updateSessionNavigation() {
+    const link = $('[data-session-link]');
+    const signout = $('[data-session-signout]');
+    if (!link || !supabase) return;
+    const apply = (session) => {
+      const signedIn = Boolean(session?.user);
+      link.textContent = signedIn ? 'Dashboard ↗' : 'Dashboard / Client Portal ↗';
+      if (signout) signout.classList.toggle('hidden', !signedIn);
+    };
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      apply(data.session);
+      supabase.auth.onAuthStateChange((_event, session) => apply(session));
+    } catch (err) {
+      console.warn('Could not read sign-in state for navigation:', err);
+    }
+    if (signout) signout.addEventListener('click', async () => {
+      signout.disabled = true;
+      signout.textContent = 'Signing out…';
+      const { error } = await supabase.auth.signOut();
+      signout.disabled = false;
+      signout.textContent = 'Sign out';
+      if (error) {
+        alert('Could not sign out: ' + error.message);
+        return;
+      }
+      // Keep the visitor on the public page; only the account session ends.
+      apply(null);
+      window.location.href = 'index.html';
+    });
+  }
+  updateSessionNavigation();
   renderCatalog();
   const form=$('#contactForm'); if(form) form.addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(form);const name=fd.get('name'),email=fd.get('email'),interest=fd.get('interest'),message=fd.get('message');const text=`Hello Vantage Forge,\nName: ${name}\nEmail: ${email}\nInterest: ${interest}\nMessage: ${message}`;const url=waLink(text);const number=String(site.WHATSAPP_NUMBER||'').replace(/\D/g,'');if(number){window.open(url,'_blank','noopener');$('#formMessage').textContent='Opening WhatsApp with your enquiry. Please press Send in WhatsApp to submit it.';}else{$('#formMessage').textContent='Please set the WhatsApp number in site-config.js. Your enquiry details have not been sent.';}});
 })();

@@ -46,3 +46,44 @@ Upload all files and folders to the root of your existing GitHub repository, kee
 - This is a static HTML/CSS/JavaScript website. It does not require a separate server.
 - The contact form opens WhatsApp with a prefilled message; the visitor still presses Send in WhatsApp. It does not silently send messages.
 - Test the catalog after running SQL. If the page says the catalog cannot load, check the Supabase table/policies and browser console.
+
+
+## Unified workspace update
+
+The client portal now provides a unified workspace entry point. Customers use the existing customer dashboard for requirements, status, messages and files. Staff use the team request queue. Admin-role accounts also get a **Website content** tab embedded in the same portal page, allowing catalog management without manually navigating to a separate admin page. The embedded catalog reuses the Supabase browser session; `admin.js` still independently checks that the authenticated profile role is `admin`.
+
+### Before deploying
+
+1. In `config.js`, set `SUPABASE_URL` to the base project URL only (for this project: `https://esularfkuecmftbbhpuv.supabase.co`) and replace the placeholder with the project's publishable/anon key. Never put a service-role or secret key in browser code.
+2. Run `supabase/schema.sql` and `supabase/catalog.sql` in the Supabase SQL Editor if not already applied. Review the policies before production use.
+3. Ensure your own account's `profiles.role` is `admin` using the trusted Supabase SQL Editor. Never allow users to assign their own roles through the website.
+4. In Supabase Authentication URL Configuration, add your deployed Netlify URL to Site URL and Redirect URLs.
+5. Deploy the repository root on Netlify. For a local update, commit and push normally; do not use `git push --force`.
+
+### Notes
+
+- This ZIP does not contain a Supabase service-role key or user passwords.
+- The admin content tab is shown only to profiles whose database role is `admin`; staff still see the request-management tools according to the existing app's role checks. Database Row Level Security remains the actual security boundary.
+- WhatsApp is configured to `+91 89358 32240` based on the number provided earlier. Confirm this is the business WhatsApp number before publishing.
+
+
+## Seamless public website + customer workspace
+
+The customer portal shares the Vantage Forge brand and now includes the same primary navigation as the public site. Customers can move between Home, Projects & Services, Courses, About and Contact without losing the shared site context. Their authenticated workspace remains on `portal.html`, where the existing dashboard, requirements, request details, messages and private files are managed. Signing out ends the authenticated session; public pages remain available.
+
+Admin tools remain restricted to accounts whose Supabase profile has the `admin` role. Customer permissions must continue to be enforced by Supabase Row Level Security (RLS), not by front-end visibility alone.
+
+
+## Dashboard navigation fix
+
+Every public page now includes a visible **Dashboard / Client Portal** link that opens `portal.html`. If the visitor is already signed in, the existing Supabase session should load their dashboard; otherwise the page displays sign-in/create-account. The portal navigation also includes a Dashboard link so customers can return to their workspace from public pages.
+
+
+## Final navigation and sign-out behavior
+
+- Public pages share the same top navigation and a Dashboard / Client Portal link.
+- When Supabase reports an active session on a public page, the link label changes to Dashboard and a Sign out button becomes visible.
+- Sign out calls Supabase Auth, clears the session, and returns the visitor to the public home page.
+- The portal retains its own Sign out control. After signing out there, the portal returns to the login view.
+- Admins use the role-protected team workspace. The Website Content tab opens the existing catalog manager within that workspace; customer requests and content management are grouped in the same admin area.
+- Do not place a Supabase service-role or secret key in browser files. Configure only the public anon/publishable key in `config.js`, and keep access controlled by database RLS policies.

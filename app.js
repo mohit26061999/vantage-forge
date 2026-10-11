@@ -28,6 +28,19 @@
     const {data,error}=await supabase.from("profiles").select("id,full_name,email,role").eq("id",currentUser.id).single();
     if(error) throw error; currentProfile=data;
   }
+  function setWorkspaceTab(tab) {
+    const catalog=tab==="catalog";
+    const catalogWorkspace=$("#catalogWorkspace");
+    if(!catalogWorkspace) return;
+    catalogWorkspace.classList.toggle("hidden",!catalog);
+    $(".stats-grid").classList.toggle("hidden",catalog);
+    $(".content-grid").classList.toggle("hidden",catalog);
+    $("#requestsTabBtn").classList.toggle("primary",!catalog);
+    $("#requestsTabBtn").classList.toggle("ghost",catalog);
+    $("#catalogTabBtn").classList.toggle("primary",catalog);
+    $("#catalogTabBtn").classList.toggle("ghost",!catalog);
+    if(catalog && !$("#catalogFrame").dataset.loaded) $("#catalogFrame").dataset.loaded="1";
+  }
   async function refreshDashboard() {
     if(!currentUser || !currentProfile) return;
     showSignedIn();
@@ -36,6 +49,9 @@
     $("#welcomeTitle").textContent=`${isStaff?"Welcome":"Welcome"}, ${(currentProfile.full_name||currentUser.email||"there").split(" ")[0]}`;
     $("#welcomeSub").textContent=isStaff?"Review requirements, coordinate responses, and manage delivery.":"Manage your requirements, conversations, and project files.";
     $("#adminTools").classList.toggle("hidden",!isStaff);
+    const isAdmin=currentProfile.role==="admin";
+    $("#catalogTabBtn").classList.toggle("hidden",!isAdmin);
+    setWorkspaceTab("requests");
     $("#newRequestBtn").classList.toggle("hidden",isStaff);
     $("#sideNewRequestBtn").classList.toggle("hidden",isStaff);
     $("#listTitle").textContent=isStaff?"All customer requests":"Your requests";
@@ -146,6 +162,7 @@
     $("#newRequestBtn").addEventListener("click",()=>$("#requirementDialog").showModal());$("#sideNewRequestBtn").addEventListener("click",()=>$("#requirementDialog").showModal());
     $("#requirementForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget;setBusy(form,true);setMessage("#requirementMessage","");try{const data=await createRequirement(form);form.reset();$("#requirementDialog").close();showToast("Requirement submitted: VF-"+data.id.slice(0,8).toUpperCase());await loadRequests();}catch(err){setMessage("#requirementMessage",err.message,true);}finally{setBusy(form,false);}});
     $("#statusFilter").addEventListener("change",loadRequests);$("#refreshBtn").addEventListener("click",loadRequests);$("#teamGuideBtn").addEventListener("click",()=>$("#teamDialog").showModal());
+    $("#requestsTabBtn").addEventListener("click",()=>setWorkspaceTab("requests"));$("#catalogTabBtn").addEventListener("click",()=>{if(currentProfile?.role==="admin")setWorkspaceTab("catalog");});
     $$("[data-close]").forEach(b=>b.addEventListener("click",()=>$("#"+b.dataset.close).close()));
     supabase.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>onSession(session),0);});
     const {data:{session}}=await supabase.auth.getSession();await onSession(session);
