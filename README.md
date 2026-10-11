@@ -87,3 +87,10 @@ Every public page now includes a visible **Dashboard / Client Portal** link that
 - The portal retains its own Sign out control. After signing out there, the portal returns to the login view.
 - Admins use the role-protected team workspace. The Website Content tab opens the existing catalog manager within that workspace; customer requests and content management are grouped in the same admin area.
 - Do not place a Supabase service-role or secret key in browser files. Configure only the public anon/publishable key in `config.js`, and keep access controlled by database RLS policies.
+
+
+## Fix for the embedded Website Content tab
+
+The admin workspace embeds `admin.html` inside the team workspace so customer requests and catalog management can be accessed in one place. The prior Netlify header `X-Frame-Options = "DENY"` blocked this same-site iframe, causing the large blank/grey panel and preventing access to the add/edit/delete controls. This package changes the header to `SAMEORIGIN`, which allows the site to embed its own admin page while continuing to block embedding by other sites.
+
+After deploying, confirm `supabase/catalog.sql` has been run in the same Supabase project and that the signed-in profile has role `admin`. Catalog writes are enforced by Supabase RLS. If catalog operations still fail, read the error shown by the admin editor and check the catalog table policies.
