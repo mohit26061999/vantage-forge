@@ -90,3 +90,43 @@
  .portal-shared-nav .brand small { font-size:8px; }
  .portal-top-actions .connection { display:none; }
 }
+
+/* FIX: portal header is a <header>, not a <nav>; explicitly apply the public navbar colors/layout. */
+header.portal-shared-nav {
+  display:block;
+  width:100%;
+  background:var(--navy, #071426) !important;
+  color:#fff !important;
+  position:sticky;
+  top:0;
+  z-index:100;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  box-shadow:0 4px 18px rgba(7,20,38,.08);
+}
+header.portal-shared-nav .nav-inner {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  width:min(1160px,92%);
+  min-height:78px;
+  margin:0 auto;
+}
+header.portal-shared-nav .brand,
+header.portal-shared-nav .brand span { color:#fff !important; text-decoration:none; }
+header.portal-shared-nav .portal-nav-links a {
+  color:#fff !important;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:600;
+  white-space:nowrap;
+}
+header.portal-shared-nav .portal-nav-links a:hover,
+header.portal-shared-nav .portal-nav-links .active-dashboard-link { color:#7ce6ee !important; }
+header.portal-shared-nav .portal-top-actions { display:flex; align-items:center; gap:12px; }
+header.portal-shared-nav .connection { color:#b9cbe0 !important; }
+header.portal-shared-nav .menu-toggle { color:#fff; background:transparent; border:1px solid #ffffff55; border-radius:8px; padding:8px 10px; }
+@media(max-width:1000px) {
+  header.portal-shared-nav .nav-inner { position:relative; flex-wrap:wrap; padding:10px 0; }
+  header.portal-shared-nav .portal-nav-links { background:var(--navy,#071426) !important; }
+}
