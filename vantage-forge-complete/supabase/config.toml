@@ -1,0 +1,4 @@
+project_id = "vantage-forge-portal"
+
+[functions.notify]
+verify_jwt = true
