@@ -6,3 +6,8 @@
   font-weight: 800 !important;
   color: #67e8f9 !important;
 }
+
+.image-preview-wrap{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 12px}
+.image-preview-wrap img{display:block;width:min(100%,320px);height:180px;object-fit:cover;border:1px solid var(--line);border-radius:10px;background:#f1f5f9}
+.admin-form-grid textarea{min-height:86px;resize:vertical}
+.admin-item img{width:54px;height:42px;object-fit:cover;border-radius:6px}

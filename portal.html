@@ -9,17 +9,26 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar portal-topbar">
-  <a class="brand" href="index.html" title="Vantage Forge home"><img src="assets/vantage-forge-logo.png" alt="Vantage Forge"><span><b>VANTAGE FORGE</b><small>BUILD TODAY, LEAD TOMORROW</small></span></a>
-  <nav class="portal-nav" aria-label="Main navigation">
-    <a href="portal.html" class="active-dashboard-link">Dashboard</a>
-    <a href="index.html">Home</a>
-    <a href="projects.html">Projects &amp; Services</a>
-    <a href="courses.html">Courses</a>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-  </nav>
-  <div class="top-actions"><span id="connectionState" class="connection">Checking setup…</span><button id="logoutBtn" class="btn ghost hidden" type="button">Sign out</button></div>
+<header class="nav portal-shared-nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" title="Vantage Forge home">
+      <img src="assets/vantage-forge-logo.png" alt="Vantage Forge">
+      <span>VANTAGE FORGE<small>BUILD TODAY, LEAD TOMORROW</small></span>
+    </a>
+    <button class="menu-toggle" id="portalMenuToggle" aria-label="Toggle menu" type="button">☰</button>
+    <nav class="nav-links portal-nav-links" id="portalNavLinks" aria-label="Main navigation">
+      <a href="portal.html" class="active-dashboard-link">Dashboard</a>
+      <a href="index.html">Home</a>
+      <a href="projects.html">Projects &amp; Services</a>
+      <a href="courses.html">Courses</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="portal-top-actions">
+      <span id="connectionState" class="connection">Secure workspace</span>
+      <button id="logoutBtn" class="btn ghost hidden" type="button">Sign out</button>
+    </div>
+  </div>
 </header>
 <main class="shell">
   <section id="setupNotice" class="notice hidden">

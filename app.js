@@ -2,6 +2,9 @@
  * The browser uses only the Supabase anon key. Authorization is enforced by Postgres RLS.
  */
 (() => {
+ const portalMenuToggle=document.getElementById('portalMenuToggle');
+ if(portalMenuToggle) portalMenuToggle.addEventListener('click',()=>document.getElementById('portalNavLinks')?.classList.toggle('open'));
+
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
   const cfg = window.VF_CONFIG || {};

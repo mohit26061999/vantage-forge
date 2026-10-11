@@ -38,3 +38,31 @@ where not exists (select 1 from public.catalog_items where item_type='service' a
 insert into public.catalog_items(item_type,title,short_description,details,category,tags,is_trending,is_featured,is_published,sort_order)
 select 'project','RAG-Based Document Assistant','A document question-answering application that retrieves relevant content and generates grounded responses.','Example project showcase: document ingestion, embeddings, vector search and LLM response generation. Final scope depends on the client or learner brief.','Generative AI',array['RAG','LLMs','Vector Search'],true,true,true,1
 where not exists (select 1 from public.catalog_items where item_type='project' and title='RAG-Based Document Assistant');
+
+
+-- Catalog image storage: admins upload/delete images; visitors can read published image URLs.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('catalog-images', 'catalog-images', true, 5242880, array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif'];
+
+drop policy if exists "Public can view catalog images" on storage.objects;
+create policy "Public can view catalog images"
+on storage.objects for select to anon, authenticated
+using (bucket_id = 'catalog-images');
+
+drop policy if exists "Admins upload catalog images" on storage.objects;
+create policy "Admins upload catalog images"
+on storage.objects for insert to authenticated
+with check (bucket_id = 'catalog-images' and public.is_admin());
+
+drop policy if exists "Admins update catalog images" on storage.objects;
+create policy "Admins update catalog images"
+on storage.objects for update to authenticated
+using (bucket_id = 'catalog-images' and public.is_admin())
+with check (bucket_id = 'catalog-images' and public.is_admin());
+
+drop policy if exists "Admins delete catalog images" on storage.objects;
+create policy "Admins delete catalog images"
+on storage.objects for delete to authenticated
+using (bucket_id = 'catalog-images' and public.is_admin());
+
